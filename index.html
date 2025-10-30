@@ -1,0 +1,721 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>NeuroScreen AI — Multimodal Dementia Screening</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  /* Theme */
+  :root{
+    --bg:#F4F8FF;
+    --card:#FFFFFF;
+    --primary:#4A90E2;
+    --primary-600:#2C6DB4;
+    --muted:#7D9BCB;
+    --soft:#E8F2FF;
+    --radius:14px;
+    --shadow: 0 8px 26px rgba(36,78,140,0.06);
+    --text:#213547;
+    --sub:#566979;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; font-family: "Segoe UI", Roboto, -apple-system, system-ui, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, #F8FBFF 0%, #F4F8FF 100%);
+    color:var(--text); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  }
+
+  /* Layout */
+  .layout{max-width:1100px;margin:28px auto;padding:18px;display:grid;grid-template-columns:1fr;gap:18px}
+  header{display:flex;justify-content:space-between;align-items:center;padding:12px 8px}
+  .brand{display:flex;align-items:center;gap:12px;color:var(--primary)}
+  .brand i{font-size:28px}
+  .brand h1{font-size:18px;margin:0;font-weight:700}
+  .subtitle{font-size:12px;color:var(--sub);margin-top:4px}
+
+  /* Card */
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px}
+
+  /* Progress Steps */
+  .steps{display:flex;gap:10px;align-items:center;margin-bottom:6px}
+  .step{display:flex;flex-direction:column;align-items:center;font-size:12px;color:var(--sub);width:84px}
+  .step .circle{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#E9EEF8;color:var(--muted);font-weight:700;margin-bottom:6px}
+  .step.active .circle{background:var(--primary);color:#fff}
+  .progress-line{height:8px;background:#E9EEF8;border-radius:6px;overflow:hidden;margin-top:8px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--primary) 0%, var(--primary-600) 100%);width:0%;transition:width .4s ease}
+
+  /* Forms */
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .form-row .col-full{grid-column:1/-1}
+  label{font-size:13px;color:var(--sub);display:block;margin-bottom:8px}
+  input,select,textarea{width:100%;padding:12px;border-radius:10px;border:1px solid #E6EEF9;background:white;font-size:14px}
+  textarea{min-height:92px;resize:vertical}
+
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:10px;padding:10px 16px;border-radius:12px;border:none;background:var(--primary);color:#fff;cursor:pointer;font-weight:600}
+  .btn.secondary{background:transparent;border:1px solid var(--primary);color:var(--primary)}
+  .btn.ghost{background:transparent;color:var(--sub);border:1px dashed #E6EEF9}
+
+  /* Login Card */
+  .login-illustration{background:linear-gradient(135deg,var(--soft),#F0F7FF);border-radius:12px;padding:18px;text-align:center;color:var(--primary);box-shadow:none}
+  .login-illustration i{font-size:42px}
+
+  /* Speech UI */
+  .mic{width:108px;height:108px;border-radius:50%;background:var(--soft);display:flex;align-items:center;justify-content:center;font-size:36px;color:var(--primary);cursor:pointer;transition:transform .15s}
+  .mic.recording{background:var(--primary);color:white;transform:scale(1.03)}
+  .wave{display:flex;gap:6px;margin-top:12px;align-items:end;height:34px}
+  .bar{width:6px;background:var(--primary);border-radius:6px;animation:wave 1.4s infinite}
+  .bar:nth-child(1){height:8px;animation-delay:0s}
+  .bar:nth-child(2){height:12px;animation-delay:.08s}
+  .bar:nth-child(3){height:18px;animation-delay:.16s}
+  .bar:nth-child(4){height:10px;animation-delay:.24s}
+  .bar:nth-child(5){height:14px;animation-delay:.32s}
+  @keyframes wave{0%{opacity:.6;transform:scaleY(.6)}50%{opacity:1;transform:scaleY(1.4)}100%{opacity:.6;transform:scaleY(.75)}}
+
+  /* Cognitive area */
+  .tests{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
+  .test-card{padding:16px;border-radius:12px;border:1px solid #E9F1FF;background:linear-gradient(180deg,#fff,#FBFDFF);cursor:pointer}
+  .test-card.selected{box-shadow:0 10px 30px rgba(46,99,160,0.06);border-color:var(--primary)}
+  .test-title{font-weight:700;margin-bottom:8px}
+  .muted{color:var(--sub);font-size:13px}
+
+  /* Break Screen blank */
+  .blank-break{display:flex;align-items:center;justify-content:center;height:240px;border-radius:12px;background:#fff;border:1px solid #F1F6FB;margin-top:12px;font-size:22px;color:var(--muted);font-weight:700}
+
+  /* Option grid */
+  .options{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}
+  .option{background:var(--soft);padding:12px;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent}
+  .option.selected{border-color:var(--primary);box-shadow:0 8px 20px rgba(74,144,226,0.08)}
+  .option img{width:100%;height:120px;object-fit:cover;border-radius:8px}
+
+  /* Brain model mock */
+  .brain-model{width:100%;max-width:420px;height:260px;border-radius:12px;background:linear-gradient(135deg,#E8F2FF,#F0F7FF);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+  .hip{position:absolute;left:46%;top:44%;width:66px;height:40px;background:rgba(255,100,100,0.65);border-radius:50%;animation:highlight 1.8s infinite alternate}
+  @keyframes highlight{0%{opacity:.45;transform:scale(1)}100%{opacity:.85;transform:scale(1.08)}}
+
+  /* Results */
+  .risk{font-size:22px;font-weight:800;color:var(--primary);margin-top:8px}
+  .rec-list{margin-top:10px}
+  .rec-list li{margin-bottom:8px;color:var(--sub)}
+
+  /* Responsive */
+  @media (max-width:880px){
+    .form-row{grid-template-columns:1fr}
+    .tests{grid-template-columns:1fr}
+    .options{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+  <div class="layout">
+    <header>
+      <div class="brand">
+        <i class="fas fa-brain"></i>
+        <div>
+          <h1>NeuroScreen AI</h1>
+          <div class="subtitle">Multimodal Dementia Screening — supportive & non-diagnostic</div>
+        </div>
+      </div>
+      <div style="text-align:right;color:var(--muted);font-size:13px">Soft Blue Theme • Rounded UI</div>
+    </header>
+
+    <!-- Step Progress -->
+    <div class="card">
+      <div class="steps">
+        <div class="step active" id="step-1"><div class="circle">1</div>Login</div>
+        <div class="step" id="step-2"><div class="circle">2</div>Patient</div>
+        <div class="step" id="step-3"><div class="circle">3</div>Speech</div>
+        <div class="step" id="step-4"><div class="circle">4</div>Test</div>
+        <div class="step" id="step-5"><div class="circle">5</div>MRI</div>
+        <div class="step" id="step-6"><div class="circle">6</div>Results</div>
+      </div>
+      <div class="progress-line"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+
+    <!-- Screens container -->
+    <div id="screens">
+
+      <!-- Screen 1: Login -->
+      <section class="card" id="screen-login">
+        <div style="display:grid;grid-template-columns:1fr 380px;gap:18px;align-items:center">
+          <div>
+            <h2 style="margin:0 0 8px 0">Login</h2>
+            <p class="muted">Please sign in to begin the screening. Your privacy and comfort matter to us.</p>
+
+            <div style="margin-top:16px">
+              <label>Email / Mobile Number</label>
+              <input id="login-email" placeholder="you@example.com or +91 9xxxxxxxxx">
+            </div>
+            <div style="margin-top:12px">
+              <label>Password</label>
+              <input id="login-pass" type="password" placeholder="••••••••">
+            </div>
+            <div style="margin-top:16px;display:flex;gap:10px">
+              <button class="btn" id="btn-signin"><i class="fas fa-sign-in-alt"></i> Sign In</button>
+              <button class="btn secondary" id="btn-create">New Patient? Create Account</button>
+            </div>
+          </div>
+
+          <div class="login-illustration">
+            <i class="fas fa-heartbeat"></i>
+            <p style="margin-top:10px;font-weight:600">Early detection for better cognitive health outcomes</p>
+            <p class="muted" style="font-size:13px;margin-top:6px">Friendly, fast, and supportive screening</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 2: Patient Info -->
+      <section class="card" id="screen-patient" style="display:none">
+        <h2>Patient Profile</h2>
+        <p class="muted">Please provide patient details to personalize the screening.</p>
+
+        <div style="margin-top:12px" class="form-row">
+          <div>
+            <label>Full Name</label>
+            <input id="p-name" placeholder="Jane Doe">
+          </div>
+          <div>
+            <label>Age</label>
+            <input id="p-age" type="number" placeholder="65">
+          </div>
+
+          <div style="grid-column:1/3;margin-top:10px">
+            <label>Gender</label>
+            <select id="p-gender">
+              <option value="">Select</option><option>Female</option><option>Male</option><option>Other</option>
+            </select>
+          </div>
+
+          <div class="col-full" style="margin-top:10px">
+            <label>Medical History</label>
+            <textarea id="p-med" placeholder="Relevant conditions, medications, family history (optional)"></textarea>
+          </div>
+
+          <div class="col-full" style="margin-top:10px">
+            <label>Memory / Behavioral Concerns (optional)</label>
+            <textarea id="p-concerns" placeholder="Describe any memory changes or concerns"></textarea>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px">
+          <button class="btn" id="btn-start-screening">Start Screening <i class="fas fa-arrow-right" style="margin-left:8px"></i></button>
+          <button class="btn ghost" id="btn-p-back">Back</button>
+        </div>
+      </section>
+
+      <!-- Screen 3: Speech Screening -->
+      <section class="card" id="screen-speech" style="display:none">
+        <h2>Step 1: Speech Screening</h2>
+        <p class="muted">This short test captures voice patterns that may indicate cognitive changes. Please speak clearly.</p>
+
+        <div style="display:flex;gap:24px;align-items:center;margin-top:18px;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div id="mic" class="mic" title="Click to record"><i class="fas fa-microphone"></i></div>
+            <div class="wave" aria-hidden="true">
+              <div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div>
+            </div>
+            <div style="margin-top:12px" id="speech-status" class="muted">Click the microphone to start a short recording</div>
+          </div>
+
+          <div style="flex:1;min-width:260px">
+            <label>Sentence to speak</label>
+            <div class="card" style="padding:14px;background:var(--soft)"><strong id="speech-sentence">"The quick brown fox jumps over the lazy dog."</strong></div>
+
+            <div style="margin-top:10px">
+              <button class="btn" id="btn-speech-continue" disabled>Continue to Cognitive Test</button>
+              <button class="btn secondary" id="btn-speech-back" style="margin-left:8px">Back</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 4: Cognitive Assessment -->
+      <section class="card" id="screen-cognitive" style="display:none">
+        <h2>Step 2: Cognitive Test</h2>
+        <p class="muted">Choose one test to start. Each test repeats the sequence 3 times: original → 30s blank break → options.</p>
+
+        <div class="tests" style="margin-top:12px">
+          <div class="test-card" id="test-audio">
+            <div class="test-title">Audio Memory Test</div>
+            <div class="muted">Listen to a short word/sentence (click play), wait 30s (blank), then listen to 3 clips and select the matching one.</div>
+            <div style="margin-top:12px">
+              <button class="btn" id="start-audio">Start Audio Test</button>
+            </div>
+          </div>
+
+          <div class="test-card" id="test-visual">
+            <div class="test-title">Visual Memory Test</div>
+            <div class="muted">Observe a picture briefly (auto-hide), wait 30s (blank), then choose the original from 3 images.</div>
+            <div style="margin-top:12px">
+              <button class="btn" id="start-visual">Start Visual Test</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="cognitive-area" style="margin-top:18px"></div>
+
+        <div style="margin-top:14px">
+          <button class="btn ghost" id="btn-cog-back">Back</button>
+        </div>
+      </section>
+
+      <!-- Screen 5: MRI Analysis -->
+      <section class="card" id="screen-mri" style="display:none">
+        <h2>Step 3: Brain Scan Analysis</h2>
+        <p class="muted">Upload an MRI report image (or use sample). This demo shows a structural change probability (illustrative).</p>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:12px">
+          <div>
+            <input type="file" id="mri-file" accept="image/*">
+          </div>
+          <div>
+            <button class="btn" id="use-sample-mri"><i class="fas fa-image"></i> Use Sample MRI</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;display:flex;gap:14px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <div class="brain-model" id="brain-preview">
+              <div style="text-align:center;color:var(--muted)">
+                No MRI uploaded
+              </div>
+              <div class="hip" aria-hidden="true"></div>
+            </div>
+          </div>
+
+          <div style="flex:1;min-width:240px">
+            <div class="analysis-result card" style="padding:12px">
+              <div class="muted">Structural Change Probability</div>
+              <div style="font-weight:800;font-size:22px;margin-top:8px" id="structural-prob">0.68</div>
+              <div class="muted" style="margin-top:8px">Hippocampal volume shown for illustration only.</div>
+            </div>
+
+            <div style="margin-top:12px">
+              <button class="btn" id="btn-mri-continue">View Results</button>
+              <button class="btn ghost" id="btn-mri-back" style="margin-left:8px">Back</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Screen 6: Results -->
+      <section class="card" id="screen-results" style="display:none">
+        <h2>Screening Result</h2>
+        <p class="muted">Combined outcome of multimodal screening (demo — not diagnostic)</p>
+
+        <div style="display:flex;gap:20px;align-items:center;margin-top:18px;flex-wrap:wrap">
+          <div style="min-width:220px">
+            <div class="muted">Early Cognitive Decline Risk</div>
+            <div class="risk" id="final-risk">Medium — 62%</div>
+            <div style="margin-top:8px;color:var(--sub)">Generated: <span id="final-time"></span></div>
+          </div>
+
+          <div style="flex:1;min-width:280px">
+            <div class="recommendations card" style="padding:12px">
+              <h4 style="margin:0 0 8px 0">Follow-up Recommendations</h4>
+              <ul class="rec-list">
+                <li>Consult a neurologist for comprehensive evaluation</li>
+                <li>Consider neuropsychological testing</li>
+                <li>Schedule a follow-up screening in 6 months</li>
+                <li>Implement daily cognitive exercises</li>
+              </ul>
+            </div>
+
+            <div class="recommendations card" style="padding:12px;margin-top:10px">
+              <h4 style="margin:0 0 8px 0">Lifestyle & Care Guidance</h4>
+              <ul class="rec-list">
+                <li>Follow a Mediterranean-style diet</li>
+                <li>Engage in regular physical activity (150 min/week)</li>
+                <li>Keep socially and mentally active</li>
+                <li>Ensure 7–8 hours of quality sleep nightly</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="medical-note card" style="padding:12px;margin-top:14px">
+          <strong>Important Note:</strong> This system supports early screening and does not replace professional diagnosis. Please consult a healthcare provider for comprehensive evaluation and treatment recommendations.
+        </div>
+
+        <div style="margin-top:14px;display:flex;gap:10px">
+          <button class="btn" id="btn-download">Download Report</button>
+          <button class="btn ghost" id="btn-restart">Start New Screening</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+<script>
+/* ---------- State & Helpers ---------- */
+const screens = {
+  login: document.getElementById('screen-login'),
+  patient: document.getElementById('screen-patient'),
+  speech: document.getElementById('screen-speech'),
+  cognitive: document.getElementById('screen-cognitive'),
+  mri: document.getElementById('screen-mri'),
+  results: document.getElementById('screen-results')
+};
+const steps = [...document.querySelectorAll('.step')];
+const progressFill = document.getElementById('progressFill');
+
+let appState = {
+  patient: {},
+  speechRecorded: false,
+  cognitiveScores: { audio: 0, visual: 0 },
+  mriProbability: 0.68,
+  roundsToRun: 3
+};
+
+function show(screenKey){
+  Object.values(screens).forEach(s=>s.style.display='none');
+  screens[screenKey].style.display='block';
+  // update active step and progress
+  const mapping = { login:0, patient:1, speech:2, cognitive:3, mri:4, results:5 };
+  steps.forEach((st,i)=> st.classList.toggle('active', i===mapping[screenKey]));
+  progressFill.style.width = (mapping[screenKey] / 5 * 100) + '%';
+}
+
+/* ---------- Login handlers ---------- */
+document.getElementById('btn-signin').addEventListener('click', ()=>{
+  const email = document.getElementById('login-email').value.trim();
+  if(!email){ alert('Please enter email or mobile to continue'); return; }
+  show('patient');
+});
+document.getElementById('btn-create').addEventListener('click', ()=> alert('Create account flow not implemented in demo'));
+document.getElementById('btn-p-back').addEventListener('click', ()=> show('login'));
+
+/* ---------- Patient -> Speech ---------- */
+document.getElementById('btn-start-screening').addEventListener('click', ()=>{
+  appState.patient = {
+    name: document.getElementById('p-name').value.trim() || 'Anonymous',
+    age: document.getElementById('p-age').value || '',
+    gender: document.getElementById('p-gender').value || '',
+    medical: document.getElementById('p-med').value.trim() || '',
+    concerns: document.getElementById('p-concerns').value.trim() || ''
+  };
+  show('speech');
+});
+
+/* ---------- Speech Recording (try real mic, else simulate) ---------- */
+const mic = document.getElementById('mic');
+const speechStatus = document.getElementById('speech-status');
+const speechSentenceEl = document.getElementById('speech-sentence');
+const btnSpeechContinue = document.getElementById('btn-speech-continue');
+let recording = false;
+let mediaRecorder=null; let recordedChunks=[];
+
+async function startRecordingDemo(){
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    mediaRecorder = new MediaRecorder(stream);
+    recordedChunks = [];
+    mediaRecorder.ondataavailable = e => { if(e.data.size>0) recordedChunks.push(e.data) };
+    mediaRecorder.onstop = ()=> {
+      const blob = new Blob(recordedChunks, { type:'audio/webm' });
+      appState.speechRecorded = blob;
+      speechStatus.textContent = 'Recording complete — analysis finished';
+      speechStatus.style.color = '#2E7D32';
+      btnSpeechContinue.disabled = false;
+    };
+    mediaRecorder.start();
+    recording = true; mic.classList.add('recording'); speechStatus.textContent='Recording — please speak';
+    setTimeout(()=> { if(mediaRecorder && mediaRecorder.state==='recording'){ mediaRecorder.stop(); mic.classList.remove('recording'); recording=false } }, 3500);
+  }catch(e){
+    // fallback simulate
+    recording = true; mic.classList.add('recording'); speechStatus.textContent='Recording...';
+    setTimeout(()=>{ appState.speechRecorded = 'simulated'; recording=false; mic.classList.remove('recording'); speechStatus.textContent='Recording complete — analysis finished'; btnSpeechContinue.disabled=false; }, 3000);
+  }
+}
+
+mic.addEventListener('click', ()=> {
+  if(recording){
+    if(mediaRecorder && mediaRecorder.state === 'recording') mediaRecorder.stop();
+    recording=false; mic.classList.remove('recording'); speechStatus.textContent='Recording stopped';
+  } else startRecordingDemo();
+});
+
+document.getElementById('btn-speech-back').addEventListener('click', ()=> show('patient'));
+btnSpeechContinue.addEventListener('click', ()=> show('cognitive'));
+
+/* ---------- Cognitive Assessment: audio & visual flows ---------- */
+
+/* Assets for cognitive tests (demo placeholders built-in) */
+const audioOriginals = ['Apple','Dog','Boat']; // words
+// audio files: using SpeechSynthesis to avoid external mp3 files (click-to-play)
+const pictureList = [
+  { label:'Apple', src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Apple' },
+  { label:'Dog', src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Dog' },
+  { label:'Boat', src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Boat' }
+];
+
+const cognitiveArea = document.getElementById('cognitive-area');
+
+function clearCognitiveArea(){ cognitiveArea.innerHTML = ''; }
+
+function sleep(ms){ return new Promise(res=>setTimeout(res,ms)); }
+
+/* Generic break blank UI */
+function showBreakUI(seconds){
+  cognitiveArea.innerHTML = `<div class="blank-break">Break — ${seconds}s</div>`;
+}
+
+/* AUDIO Memory Test sequence (3 rounds) — click-to-play original */
+document.getElementById('start-audio').addEventListener('click', ()=>{
+  runAudioRounds(0, appState.roundsToRun);
+});
+
+async function runAudioRounds(startIndex, rounds){
+  clearCognitiveArea();
+  let score = 0;
+  for(let r=0; r<rounds; r++){
+    const idx = r % audioOriginals.length;
+    // Show original with play button
+    cognitiveArea.innerHTML = `
+      <div class="card" style="padding:18px;text-align:center">
+        <h3>Round ${r+1} — Audio Memory</h3>
+        <div style="margin-top:10px" id="audio-original-area">
+          <div class="muted">Play the original word (click to play)</div>
+          <div style="margin-top:12px">
+            <button class="btn" id="play-original"><i class="fas fa-play"></i> Play Original</button>
+          </div>
+        </div>
+      </div>
+    `;
+    // wait for user to click play; after original finishes, proceed to break
+    await new Promise(resolve => {
+      const playBtn = document.getElementById('play-original');
+      playBtn.addEventListener('click', async function handler(){
+        playBtn.disabled = true;
+        speakText(audioOriginals[idx], ()=> resolve());
+      }, { once: true });
+    });
+
+    // After original finished, blank break for 30s
+    await runBreak(30);
+
+    // After break, show 3 option audios (clickable plays) — make one correct
+    const options = generateAudioOptions(audioOriginals[idx]);
+    cognitiveArea.innerHTML = `
+      <div class="card" style="padding:14px">
+        <h3>Round ${r+1} — Choose the matching audio</h3>
+        <div class="muted">Play each clip and select the one that matches the original word.</div>
+        <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap">
+          ${options.map((opt,i)=>`<div class="option" data-correct="${opt.correct ? '1':'0'}" style="min-width:180px;padding:12px">
+            <button class="btn" data-play="${i}" style="width:100%"><i class="fas fa-play"></i> Play Clip ${i+1}</button>
+            <div style="margin-top:8px;text-align:center" class="muted">Clip ${i+1}</div>
+          </div>`).join('')}
+        </div>
+      </div>
+    `;
+    // setup playing and selection
+    const optionEls = Array.from(cognitiveArea.querySelectorAll('.option'));
+    let chosen = null;
+    optionEls.forEach((el, i) => {
+      const playBtn = el.querySelector('button[data-play]');
+      playBtn.addEventListener('click', (ev) => {
+        const clip = options[i].word;
+        speakText(clip);
+      });
+      el.addEventListener('click', ()=>{
+        // mark selection
+        optionEls.forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+        chosen = el.getAttribute('data-correct') === '1';
+        // small delay to show selection then continue
+        setTimeout(()=>{}, 250);
+      });
+    });
+
+    // wait until user selects one
+    await new Promise(resolve => {
+      const checker = setInterval(()=>{
+        if(chosen !== null){
+          clearInterval(checker);
+          if(chosen) score++;
+          resolve();
+        }
+      }, 300);
+    });
+
+    // small pause before next round
+    await sleep(500);
+  } // rounds finished
+
+  appState.cognitiveScores.audio = score;
+  // auto go to next test prompt (we'll show message & let user choose next)
+  cognitiveArea.innerHTML = `<div class="card" style="padding:16px;text-align:center">Audio Test Complete — Score: ${score}/${rounds}<div style="margin-top:12px"><button class="btn" id="proceed-visual">Continue to Visual Test</button></div></div>`;
+  document.getElementById('proceed-visual').addEventListener('click', ()=> {
+    document.getElementById('start-visual').scrollIntoView({behavior:'smooth'});
+  });
+}
+
+/* Visual Memory Test sequence (3 rounds) */
+document.getElementById('start-visual').addEventListener('click', ()=> {
+  runVisualRounds(0, appState.roundsToRun);
+});
+
+async function runVisualRounds(startIndex, rounds){
+  clearCognitiveArea();
+  let score = 0;
+  for(let r=0; r<rounds; r++){
+    const idx = r % pictureList.length;
+    // show picture for a few seconds (e.g., 4s)
+    cognitiveArea.innerHTML = `<div class="card" style="padding:18px;text-align:center"><h3>Round ${r+1} — Visual Memory</h3>
+      <div style="margin-top:12px"><img src="${pictureList[idx].src}" alt="${pictureList[idx].label}" style="max-width:360px;border-radius:10px"></div>
+      <div class="muted" style="margin-top:10px">Observe this image carefully. It will be hidden in 4 seconds.</div>
+    </div>`;
+    await sleep(4000);
+
+    // hide & show break blank 30s
+    await runBreak(30);
+
+    // show 3 options (one is correct)
+    const opts = generateVisualOptions(pictureList[idx]);
+    cognitiveArea.innerHTML = `<div class="card" style="padding:14px"><h3>Round ${r+1} — Choose the image you saw</h3>
+      <div class="options">${opts.map(o=>`<div class="option" data-correct="${o.correct?1:0}"><img src="${o.src}" alt=""></div>`).join('')}</div></div>`;
+    const optEls = Array.from(cognitiveArea.querySelectorAll('.option'));
+    let chosen = null;
+    optEls.forEach(el=>{
+      el.addEventListener('click', ()=>{
+        optEls.forEach(o=>o.classList.remove('selected'));
+        el.classList.add('selected');
+        chosen = el.getAttribute('data-correct') === '1';
+      });
+    });
+
+    // wait for selection
+    await new Promise(resolve=>{
+      const check = setInterval(()=>{
+        if(chosen !== null){
+          clearInterval(check);
+          if(chosen) score++;
+          resolve();
+        }
+      },250);
+    });
+
+    await sleep(400);
+  }
+  appState.cognitiveScores.visual = score;
+  cognitiveArea.innerHTML = `<div class="card" style="padding:16px;text-align:center">Visual Test Complete — Score: ${score}/${rounds}<div style="margin-top:12px"><button class="btn" id="proceed-mri">Proceed to MRI Step</button></div></div>`;
+  document.getElementById('proceed-mri').addEventListener('click', ()=> show('mri'));
+}
+
+/* helper to run break UI for seconds and return when done */
+async function runBreak(seconds){
+  // blank/center break
+  showBreakUI(seconds);
+  for(let s=seconds; s>0; s--){
+    cognitiveArea.querySelector('.blank-break').textContent = `Break — ${s}s`;
+    await sleep(1000);
+  }
+  // short pause to allow UI to settle
+  await sleep(200);
+}
+
+/* generate audio options - returns array of {word, correct} with correct included and shuffled */
+function generateAudioOptions(correctWord){
+  const pool = ['Apple','Dog','Boat','Sun','Chair','Window','Phone'];
+  // ensure includes correctWord and two distractors
+  const distractors = pool.filter(p=>p !== correctWord).sort(()=>Math.random()-0.5).slice(0,2);
+  const arr = [{word:correctWord, correct:true}, {word:distractors[0], correct:false}, {word:distractors[1], correct:false}];
+  return shuffle(arr);
+}
+
+/* generate visual options - returns array of {src, correct} */
+function generateVisualOptions(correctObj){
+  const extras = [
+    {src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Car', correct:false},
+    {src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Cat', correct:false},
+    {src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Boat', correct:false},
+    {src:'https://placehold.co/420x260/E8F2FF/2C6DB4?text=Tree', correct:false}
+  ];
+  const opts = [{src:correctObj.src, correct:true}, ...shuffle(extras).slice(0,2)];
+  return shuffle(opts);
+}
+
+/* Text-to-speech convenience (click-to-play) */
+function speakText(text, onend){
+  if(!window.speechSynthesis) { alert('Speech not available'); if(onend) onend(); return; }
+  const u = new SpeechSynthesisUtterance(text);
+  const v = speechSynthesis.getVoices().find(v=>v.lang.startsWith('en')) || null;
+  if(v) u.voice = v;
+  u.onend = () => { if(onend) onend(); };
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+
+/* shuffle helper */
+function shuffle(a){ for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]] } return a }
+
+/* ---------- MRI handlers ---------- */
+const brainPreview = document.getElementById('brain-preview');
+const structProb = document.getElementById('structural-prob');
+document.getElementById('use-sample-mri').addEventListener('click', ()=>{
+  brainPreview.innerHTML = '<img src="https://placehold.co/380x240/E8F2FF/2C6DB4?text=Sample+MRI" style="width:100%;height:100%;object-fit:cover"><div class="hip"></div>';
+  appState.mriProbability = 0.68;
+  structProb.textContent = appState.mriProbability.toFixed(2);
+});
+document.getElementById('mri-file').addEventListener('change', (e)=>{
+  const f = e.target.files[0];
+  if(!f) return;
+  const url = URL.createObjectURL(f);
+  brainPreview.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover"><div class="hip"></div>`;
+  // demo mapping: larger file->higher prob (not clinical)
+  const prob = Math.min(0.92, 0.3 + Math.min(1, f.size/(1024*1024*4))*0.6);
+  appState.mriProbability = prob;
+  structProb.textContent = appState.mriProbability.toFixed(2);
+});
+document.getElementById('btn-mri-continue').addEventListener('click', ()=> finalizeResults());
+document.getElementById('btn-mri-back').addEventListener('click', ()=> show('cognitive'));
+
+/* ---------- Results calculation & download ---------- */
+function finalizeResults(){
+  // simple demo scoring: weight audio/visual equally, mri contributes
+  const audioScore = appState.cognitiveScores.audio || 0;
+  const visualScore = appState.cognitiveScores.visual || 0;
+  const rounds = appState.roundsToRun;
+  const cognitivePercent = Math.round(((audioScore + visualScore) / (rounds*2)) * 100);
+  // integrate mri probability (50% weight demo)
+  const combined = Math.round((cognitivePercent*0.6) + (appState.mriProbability*100*0.4));
+  let riskLabel = 'Low';
+  if(combined >= 75) riskLabel = 'High';
+  else if(combined >= 40) riskLabel = 'Medium';
+  appState.final = { combined, riskLabel, cognitivePercent };
+
+  document.getElementById('final-risk').textContent = `${riskLabel} — ${combined}%`;
+  document.getElementById('final-time').textContent = new Date().toLocaleString();
+  show('results');
+}
+
+/* Download report JSON */
+document.getElementById('btn-download').addEventListener('click', ()=>{
+  const report = {
+    patient:appState.patient,
+    speechRecorded: !!appState.speechRecorded,
+    cognitive: appState.cognitiveScores,
+    mriProbability: appState.mriProbability,
+    final: appState.final,
+    generatedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type:'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `${(appState.patient.name||'patient')}-neuroscreen-report.json`; a.click();
+  URL.revokeObjectURL(url);
+});
+/* Restart */
+document.getElementById('btn-restart').addEventListener('click', ()=>{
+  // reset minimal state and go to patient step
+  appState.cognitiveScores = {audio:0,visual:0};
+  appState.speechRecorded = false;
+  show('patient');
+});
+
+/* initial */
+show('login');
+
+</script>
+</body>
+</html>
